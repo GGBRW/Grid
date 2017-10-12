@@ -1,0 +1,59 @@
+
+<canvas id="c"></canvas>
+<script>
+    const ctx = c.getContext("2d");
+    [c.height,c.width] = [innerHeight,innerWidth];
+    window.onresize = () => [c.height,c.width] = [innerHeight,innerWidth];
+    document.body.style.overflow = document.body.style.margin = 0;
+
+    let zoom = 20;
+    let offset = { x: 0, y: 0 };
+
+    requestAnimationFrame(draw);
+    function draw() {
+        ctx.clearRect(0,0,c.width,c.height);
+
+        if(zoom > 5) {
+            ctx.fillStyle = "lightgray";
+            for (let i = (offset.x * zoom) % zoom; i < c.width; i += zoom)
+            for (let j = (offset.y * zoom) % zoom; j < c.height; j += zoom)
+                ctx.fillRect(i, j, zoom / 12, zoom / 12);
+        }
+
+        if(scrollAnimation.animate) {
+            offset.x += Math.sin(scrollAnimation.r) * scrollAnimation.v;
+            offset.y += Math.cos(scrollAnimation.r) * scrollAnimation.v;
+            scrollAnimation.v -= scrollAnimation.v / 16;
+            if(scrollAnimation.v <= 0) scrollAnimation.animate = false;
+        }
+
+        if((zoom > 1 && zoom - zoomAnimation.zoom > 0)
+        || (zoom < 300 && zoom - zoomAnimation.zoom < 0)) {
+            offset.x -= zoomAnimation.x * (1 / zoom - 8 / (zoomAnimation.zoom + 7 * zoom));
+            offset.y -= zoomAnimation.y * (1 / zoom - 8 / (zoomAnimation.zoom + 7 * zoom));
+            zoom -= (zoom - zoomAnimation.zoom) / 8;
+            zoomAnimation.animate = !!(zoomAnimation - zoom);
+        }
+
+        requestAnimationFrame(draw);
+    }
+    c.oncontextmenu = () => false;
+
+    let scrollAnimation = { v: 0, r: 0, animate: false };
+    let zoomAnimation = { x: 0, y: 0, zoom: 20, animate: false };
+    c.onmousedown = () => scrollAnimation.animate = false;
+    c.onmousemove = function(e) {
+        if(e.which) {
+            offset.x += e.movementX / zoom;
+            offset.y += e.movementY / zoom;
+            scrollAnimation.v = Math.sqrt(Math.pow(e.movementX / zoom,2) + Math.pow(e.movementY / zoom,2));
+            scrollAnimation.r = Math.atan2(e.movementX,e.movementY);
+        }
+    }
+    c.onmouseup = () => scrollAnimation.animate = true;
+    c.onmousewheel = function(e) {
+        zoomAnimation.x = e.x; zoomAnimation.y = e.y;
+        zoomAnimation.zoom -= zoom / 8 * Math.sign(e.deltaY);
+        zoomAnimation.animate = true;
+    }
+</script>
